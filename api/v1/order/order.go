@@ -90,17 +90,7 @@ func CancelOrder(ctx *gin.Context) {
 		})
 		return
 	}
-	//orderId := parameter.OrderId
-	//userId := parameter.UserId
-	//err = services.CancelOrder(orderId, userId)
-	//if err != nil {
-	//	log.Info().Msgf("fail to cancel order, error is: %v", err)
-	//	ctx.JSON(200, gin.H{
-	//		"code":    common.Fail,
-	//		"message": "cancel error",
-	//	})
-	//	return
-	//}
+
 	log.Info().Msgf("fail to cancel order, error is: %v", err)
 	ctx.JSON(200, gin.H{
 		"code":    common.Success,

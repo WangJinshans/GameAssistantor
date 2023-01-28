@@ -2,19 +2,17 @@ package game_account
 
 import (
 	"game_assistantor/common"
-	"game_assistantor/model"
 	"game_assistantor/repository"
-	"game_assistantor/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
 
-var GameRoleApi ApiUser
+var GameRoleApi ApiGameRole
 
-type ApiUser struct {
+type ApiGameRole struct {
 }
 
-func (*ApiUser) GetUserInfo(ctx *gin.Context) {
+func (*ApiGameRole) GetAccountInfo(ctx *gin.Context) {
 	type req struct {
 		UserId string `json:"user_id"`
 	}
@@ -45,14 +43,11 @@ func (*ApiUser) GetUserInfo(ctx *gin.Context) {
 	return
 }
 
-func (*ApiUser) UpdateUserLevel(ctx *gin.Context) {
+func (*ApiGameRole) GetAccountRoleList(ctx *gin.Context) {
 	type req struct {
-		UserId  string `json:"user_id"`
-		OrderId string `json:"order_id"`
+		UserId string `json:"user_id"`
 	}
-	var updateType int
 	var parameter req
-	var user *model.User
 	err := ctx.BindJSON(&parameter)
 	if err != nil {
 		ctx.JSON(200, gin.H{
@@ -61,13 +56,8 @@ func (*ApiUser) UpdateUserLevel(ctx *gin.Context) {
 		})
 		return
 	}
-	if parameter.OrderId != "" {
-		updateType = common.CreateVip // 维持vip
-	} else {
-		updateType = common.CancelVip // 取消vip
-	}
 
-	user, err = repository.UserRepos.GetUser(parameter.UserId)
+	user, err := repository.UserRepos.GetUser(parameter.UserId)
 	if err != nil {
 		log.Info().Msgf("fail to get user, error is: %v", err)
 		ctx.JSON(200, gin.H{
@@ -77,32 +67,92 @@ func (*ApiUser) UpdateUserLevel(ctx *gin.Context) {
 		return
 	}
 
-	var m int
-	m, err = repository.UserRepos.GetUpgradeInfo(parameter.OrderId)
+	ctx.JSON(200, gin.H{
+		"code":    common.Success,
+		"message": user,
+	})
+	return
+}
+
+func (*ApiGameRole) UpdateRoleInfo(ctx *gin.Context) {
+	type req struct {
+		UserId  string `json:"user_id"`
+		OrderId string `json:"order_id"`
+	}
+	var parameter req
+	err := ctx.BindJSON(&parameter)
 	if err != nil {
 		ctx.JSON(200, gin.H{
 			"code":    common.Fail,
-			"message": "order not found",
+			"message": "user id not found",
 		})
 		return
 	}
-	if updateType == common.CreateVip {
-		ts := utils.GetExpireTimeStamp(0, m, 0, 0, 0, 0) // 过期时间
-		user.LevelExpire = ts
-		user.UserLevel = common.VipLevel
-		if user.FirstVip == common.FirstVip {
-			// 首次
-			user.FirstVip = common.NotFirstVip
-		}
-	} else {
-		user.UserLevel = common.RegularLevel
+
+	ctx.JSON(200, gin.H{
+		"code":    common.Success,
+		"message": "",
+	})
+	return
+}
+
+func (*ApiGameRole) UpdateAccountInfo(ctx *gin.Context) {
+	type req struct {
+		UserId  string `json:"user_id"`
+		OrderId string `json:"order_id"`
 	}
-	err = repository.UserRepos.UpdateUser(user)
+	var parameter req
+	err := ctx.BindJSON(&parameter)
 	if err != nil {
-		log.Info().Msgf("fail to get user, error is: %v", err)
 		ctx.JSON(200, gin.H{
 			"code":    common.Fail,
-			"message": "user not found",
+			"message": "user id not found",
+		})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"code":    common.Success,
+		"message": "",
+	})
+	return
+}
+
+// 添加账号
+func (*ApiGameRole) AddAccount(ctx *gin.Context) {
+	type req struct {
+		UserId  string `json:"user_id"`
+		OrderId string `json:"order_id"`
+	}
+	var parameter req
+	err := ctx.BindJSON(&parameter)
+	if err != nil {
+		ctx.JSON(200, gin.H{
+			"code":    common.Fail,
+			"message": "user id not found",
+		})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"code":    common.Success,
+		"message": "",
+	})
+	return
+}
+
+// 添加角色
+func (*ApiGameRole) AddAccountRole(ctx *gin.Context) {
+	type req struct {
+		UserId  string `json:"user_id"`
+		OrderId string `json:"order_id"`
+	}
+	var parameter req
+	err := ctx.BindJSON(&parameter)
+	if err != nil {
+		ctx.JSON(200, gin.H{
+			"code":    common.Fail,
+			"message": "user id not found",
 		})
 		return
 	}

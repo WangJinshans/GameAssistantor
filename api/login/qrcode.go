@@ -1,14 +1,14 @@
 package login
 
 import (
+	"encoding/base64"
+	"fmt"
 	"game_assistantor/auth"
 	"game_assistantor/common"
 	"game_assistantor/global"
 	"game_assistantor/model"
 	"game_assistantor/repository"
 	"game_assistantor/utils"
-	"encoding/base64"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	qrcode "github.com/skip2/go-qrcode"
