@@ -1,9 +1,9 @@
 package repository
 
 import (
+	"errors"
 	"game_assistantor/common"
 	"game_assistantor/model"
-	"errors"
 	"github.com/matryer/try"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"

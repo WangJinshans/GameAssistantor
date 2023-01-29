@@ -1,9 +1,9 @@
 package repository
 
 import (
+	"errors"
 	"game_assistantor/common"
 	"game_assistantor/model"
-	"errors"
 )
 
 func LockCount(productId string, storeId string, count int64) (err error) {
