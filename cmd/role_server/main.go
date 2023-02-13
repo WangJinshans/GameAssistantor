@@ -74,12 +74,15 @@ func StartServer() {
 	{
 		ecoGroup := v1.Group("role")
 		{
-			ecoGroup.POST("/add", game_account.GameRoleApi.GetUserInfo)
+			ecoGroup.POST("/add", game_account.GameRoleApi.GetAccountInfo)
 		}
 	}
 	r.Run(":8088")
 }
 
 func main() {
-	StartServer()
+	//StartServer()
 }
+
+
+
