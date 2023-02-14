@@ -49,8 +49,7 @@ func initDatabase() {
 }
 
 func SyncTables() (err error) {
-	err = engine.AutoMigrate(
-	)
+	err = engine.AutoMigrate()
 	return
 }
 
@@ -59,16 +58,20 @@ func StartServer() {
 	r.Use(middlerware.Cors())
 	r.Use(gin.Recovery())
 	r.Static("/static", "../../static/")
-	r.GET("/get_public_key", login.GetPublicKey)
-	r.POST("/login", login.Login)
-	r.POST("/logout", login.Logout)
-	r.POST("/register", login.Register)
-	r.POST("/refresh_token", login.RefreshToken)
-	r.GET("/get_qrcode", login.InitQrCode)
-	r.GET("/get_qrcode_status", login.QueryQrCode)
-	r.POST("/set_qrcode_status", login.SetQrCodeStatus)
-	r.POST("/scan_qrcode", login.ScanQrCode)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	base := r.Group("v1")
+	{
+		base.GET("/get_public_key", login.GetPublicKey)
+		base.POST("/login", login.Login)
+		base.POST("/logout", login.Logout)
+		base.POST("/register", login.Register)
+		base.POST("/refresh_token", login.RefreshToken)
+		base.GET("/get_qrcode", login.InitQrCode)
+		base.GET("/get_qrcode_status", login.QueryQrCode)
+		base.POST("/set_qrcode_status", login.SetQrCodeStatus)
+		base.POST("/scan_qrcode", login.ScanQrCode)
+	}
 
 	v1 := r.Group("v1")
 	{
@@ -81,8 +84,5 @@ func StartServer() {
 }
 
 func main() {
-	//StartServer()
+	StartServer()
 }
-
-
-

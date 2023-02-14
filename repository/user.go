@@ -1,10 +1,7 @@
 package repository
 
 import (
-	"errors"
-	"game_assistantor/common"
 	"game_assistantor/model"
-	"github.com/matryer/try"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -38,25 +35,3 @@ func (u *UserRepository) UpdateUser(user *model.User) (err error) {
 	return
 }
 
-func (u *UserRepository) GetUpgradeInfo(orderId string) (total int, err error) {
-
-	var ov []model.OrderProduct
-	getFunc := func(attempt int) (bool, error) {
-		ov, err = GetOrderProducts(orderId)
-		if err != nil {
-			log.Info().Msgf("get order products error is: %v", err)
-			return attempt < 3, err
-		}
-		if len(ov) == 0 {
-			err = errors.New(common.EmptyProductError)
-			return true, err
-		}
-
-		total = int(ov[0].Count)
-		return true, err // try 3 times
-	}
-	if err = try.Do(getFunc); err != nil {
-		log.Error().Msgf("save error: %v", err)
-	}
-	return
-}
