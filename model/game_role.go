@@ -1,7 +1,10 @@
 package model
 
+import "gorm.io/gorm"
+
 type GameAccount struct {
-	AccountType   string
+	gorm.Model
+	AccountType   string // 账号类型
 	AccountId     string
 	AccountPwd    string
 	AccountStatus string // 账号状态

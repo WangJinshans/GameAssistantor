@@ -5,6 +5,7 @@ import (
 	"game_assistantor/model"
 	"game_assistantor/repository"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 )
 
@@ -108,13 +109,16 @@ func (*ApiGameRole) UpdateAccountInfo(ctx *gin.Context) {
 
 // 添加账号
 func (*ApiGameRole) AddAccount(ctx *gin.Context) {
+
+	validate := validator.New()
+
 	type req struct {
-		AccountId   string `json:"account_id"`
-		AccountPwd  string `json:"account_pwd"`
-		AccountType string `json:"account_type"`
+		AccountId   string `json:"account_id" validate:"required"`
+		AccountPwd  string `json:"account_pwd" validate:"required"`
+		AccountType string `json:"account_type" validate:"required"`
 	}
 	var parameter req
-	err := ctx.BindJSON(&parameter)
+	err := ctx.ShouldBindJSON(&parameter)
 	if err != nil {
 		ctx.JSON(200, gin.H{
 			"code":    common.Fail,
@@ -123,8 +127,14 @@ func (*ApiGameRole) AddAccount(ctx *gin.Context) {
 		return
 	}
 
+	err = validate.Struct(&parameter)
+	if err != nil {
+
+	}
 	var account model.GameAccount
 	account.AccountId = parameter.AccountId
+	account.AccountType = parameter.AccountType
+	account.AccountPwd = parameter.AccountPwd
 	err = repository.GameRoleRepos.SaveAccount(account)
 	if err != nil {
 		log.Info().Msgf("fail to get user, error is: %v", err)

@@ -27,6 +27,6 @@ func (u *GameRoleRepository) GetAccountRoleList(accountId string) (roleList []mo
 }
 
 func (u *GameRoleRepository) SaveAccount(account model.GameAccount) (err error) {
-	err = engine.Save(account).Error
+	err = engine.Save(&account).Error
 	return
 }

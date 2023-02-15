@@ -6,6 +6,7 @@ import (
 	"game_assistantor/api/v1/game_account"
 	"game_assistantor/config"
 	"game_assistantor/middlerware"
+	"game_assistantor/model"
 	"game_assistantor/repository"
 	"github.com/BurntSushi/toml"
 	"github.com/gin-gonic/gin"
@@ -49,7 +50,9 @@ func initDatabase() {
 }
 
 func SyncTables() (err error) {
-	err = engine.AutoMigrate()
+	err = engine.AutoMigrate(
+		&model.GameAccount{},
+	)
 	return
 }
 
@@ -77,7 +80,7 @@ func StartServer() {
 	{
 		ecoGroup := v1.Group("role")
 		{
-			ecoGroup.POST("/add", game_account.GameRoleApi.GetAccountInfo)
+			ecoGroup.POST("/add", game_account.GameRoleApi.AddAccount)
 		}
 	}
 	r.Run(":8088")
