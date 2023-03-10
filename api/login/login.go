@@ -52,12 +52,12 @@ func GetPublicKey(c *gin.Context) {
 }
 
 // @登录
-// @Description 登录
+// @Description post 登录
 // @Produce json
 // @Param user_name formData string true "用户名"
 // @Param pass_word formData string true "密码"
 // @Success 200 {object} LoginResponse
-// @Router /login [get]
+// @Router /login [post]
 func Login(context *gin.Context) {
 	var user model.User
 	err := context.BindJSON(&user)
@@ -69,7 +69,6 @@ func Login(context *gin.Context) {
 		return
 	}
 	contextId := context.GetHeader("ctx_id")
-
 	privateKey, err := global.GetPrivateKey(contextId)
 	if err != nil {
 		log.Error().Msgf("Decrypt error: %v", err)
@@ -138,7 +137,6 @@ func Register(context *gin.Context) {
 	}
 
 	contextId := context.GetHeader("ctx_id")
-
 	log.Info().Msgf("encrypt password is %s", user.PassWord)
 	data, err := base64.StdEncoding.DecodeString(user.PassWord)
 	if err != nil {

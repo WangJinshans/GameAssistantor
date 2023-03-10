@@ -3,14 +3,16 @@ package main
 import (
 	"fmt"
 	"game_assistantor/api/login"
+	"game_assistantor/api/role"
 	"game_assistantor/api/v1/game_account"
 	"game_assistantor/config"
+	_ "game_assistantor/docs" // 引入文档
 	"game_assistantor/middlerware"
 	"game_assistantor/model"
 	"game_assistantor/repository"
+	"game_assistantor/route"
 	"github.com/BurntSushi/toml"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redis/redis"
 	"github.com/rs/zerolog/log"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -19,9 +21,8 @@ import (
 )
 
 var (
-	conf        config.AssistantConfig
-	engine      *gorm.DB
-	redisClient *redis.Client
+	conf   config.AssistantConfig
+	engine *gorm.DB
 )
 
 func init() {
@@ -57,33 +58,44 @@ func SyncTables() (err error) {
 }
 
 func StartServer() {
+
 	r := gin.New()
 	r.Use(middlerware.Cors())
 	r.Use(gin.Recovery())
+	r.Use(middlerware.RequestInfo())
+
 	r.Static("/static", "../../static/")
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // swag init -g ./cmd/assistantor_server
 
-	base := r.Group("v1")
+	v1 := r.Group(route.RouterVersionGroupName)
 	{
-		base.GET("/get_public_key", login.GetPublicKey)
-		base.POST("/login", login.Login)
-		base.POST("/logout", login.Logout)
-		base.POST("/register", login.Register)
-		base.POST("/refresh_token", login.RefreshToken)
-		base.GET("/get_qrcode", login.InitQrCode)
-		base.GET("/get_qrcode_status", login.QueryQrCode)
-		base.POST("/set_qrcode_status", login.SetQrCodeStatus)
-		base.POST("/scan_qrcode", login.ScanQrCode)
-	}
-
-	v1 := r.Group("v1")
-	{
-		ecoGroup := v1.Group("role")
+		base := v1.Group(route.BaseGroupName)
 		{
-			ecoGroup.POST("/add", game_account.GameRoleApi.AddAccount)
+			base.GET(route.PublicKeyPath, login.GetPublicKey)
+			base.POST(route.LoginPath, login.Login)
+			base.POST(route.LogoutPath, login.Logout)
+			base.POST(route.RegisterPath, login.Register)
+			base.POST(route.TokenPath, login.RefreshToken)
+			base.POST(route.QrCodePath, login.InitQrCode)
+			base.GET(route.QrCodeStatusPath, login.QueryQrCode)
+			base.PATCH(route.QrCodeStatusPath, login.SetQrCodeStatus)
+			base.POST(route.QrCodeScanPath, login.ScanQrCode)
+		}
+		roleGroup := v1.Group(route.RoleGroupName)
+		{
+			roleGroup.POST(route.RolePath, role.RoleApi.AddRoleForUser)
+			roleGroup.GET(route.RoleSPath, role.RoleApi.GetAllRoles)
+			roleGroup.DELETE(fmt.Sprintf("%s:account_id", route.RolePath), role.RoleApi.DeleteRole)
+		}
+		gameRoleGroup := v1.Group(route.GameRoleGroupName)
+		{
+			gameRoleGroup.POST(route.GameRolePath, game_account.GameRoleApi.AddAccount)
+			gameRoleGroup.GET(fmt.Sprintf("%s:account_id", route.GameRolePath), game_account.GameRoleApi.GetAccountInfo)
+			gameRoleGroup.PATCH(fmt.Sprintf("%s:account_id", route.GameRolePath), game_account.GameRoleApi.UpdateAccountInfo)
 		}
 	}
 	r.Run(":8088")
+
 }
 
 func main() {

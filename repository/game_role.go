@@ -17,7 +17,7 @@ func (u *GameRoleRepository) GetAccountInfo(accountId string) (account *model.Ga
 }
 
 func (u *GameRoleRepository) UpdateAccountInfo(account model.GameAccount) (err error) {
-	engine.Model(model.GameAccount{}).Save(account)
+	err = engine.Save(&account).Error
 	return
 }
 

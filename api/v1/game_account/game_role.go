@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
+	"time"
 )
 
 var GameRoleApi ApiGameRole
@@ -15,12 +16,9 @@ type ApiGameRole struct {
 }
 
 func (*ApiGameRole) GetAccountInfo(ctx *gin.Context) {
-	type req struct {
-		AccountId string `json:"account_id"`
-	}
-	var parameter req
-	err := ctx.BindJSON(&parameter)
-	if err != nil {
+
+	accountId := ctx.Param("account_id")
+	if accountId == "" {
 		ctx.JSON(200, gin.H{
 			"code":    common.Fail,
 			"message": "user id not found",
@@ -28,7 +26,7 @@ func (*ApiGameRole) GetAccountInfo(ctx *gin.Context) {
 		return
 	}
 
-	user, err := repository.GameRoleRepos.GetAccountInfo(parameter.AccountId)
+	user, err := repository.GameRoleRepos.GetAccountInfo(accountId)
 	if err != nil {
 		log.Info().Msgf("fail to get user, error is: %v", err)
 		ctx.JSON(200, gin.H{
@@ -78,10 +76,12 @@ func (*ApiGameRole) GetAccountRoleList(ctx *gin.Context) {
 
 func (*ApiGameRole) UpdateAccountInfo(ctx *gin.Context) {
 	type req struct {
-		AccountId string `json:"account_id"`
+		AccountId   string `json:"account_id" validate:"required"`
+		AccountPwd  string `json:"account_pwd" validate:"required"`
+		AccountType string `json:"account_type" validate:"required"`
 	}
 	var parameter req
-	err := ctx.BindJSON(&parameter)
+	err := ctx.ShouldBindJSON(&parameter)
 	if err != nil {
 		ctx.JSON(200, gin.H{
 			"code":    common.Fail,
@@ -89,9 +89,15 @@ func (*ApiGameRole) UpdateAccountInfo(ctx *gin.Context) {
 		})
 		return
 	}
+	log.Info().Msgf("account info is: %#v", parameter)
 	var account model.GameAccount
 	account.AccountId = parameter.AccountId
-	err = repository.GameRoleRepos.SaveAccount(account)
+	account.AccountPwd = parameter.AccountPwd
+	account.AccountType = parameter.AccountType
+	account.ID = 1
+	account.CreatedAt = time.Now()
+
+	err = repository.GameRoleRepos.UpdateAccountInfo(account)
 	if err != nil {
 		log.Info().Msgf("fail to get user, error is: %v", err)
 		ctx.JSON(200, gin.H{
@@ -111,7 +117,6 @@ func (*ApiGameRole) UpdateAccountInfo(ctx *gin.Context) {
 func (*ApiGameRole) AddAccount(ctx *gin.Context) {
 
 	validate := validator.New()
-
 	type req struct {
 		AccountId   string `json:"account_id" validate:"required"`
 		AccountPwd  string `json:"account_pwd" validate:"required"`
@@ -122,14 +127,17 @@ func (*ApiGameRole) AddAccount(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(200, gin.H{
 			"code":    common.Fail,
-			"message": "user id not found",
+			"message": "parameter error",
 		})
 		return
 	}
 
 	err = validate.Struct(&parameter)
 	if err != nil {
-
+		ctx.JSON(200, gin.H{
+			"code":    common.Fail,
+			"message": "parameter verify failed",
+		})
 	}
 	var account model.GameAccount
 	account.AccountId = parameter.AccountId
