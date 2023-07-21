@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/BurntSushi/toml v1.2.0
+	github.com/Chain-Zhang/pinyin v0.1.3
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
 	github.com/casbin/casbin/v2 v2.51.2
 	github.com/casbin/gorm-adapter/v3 v3.7.4
@@ -20,6 +21,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matryer/try v0.0.0-20161228173917-9ac251b645a2
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/olivere/elastic/v7 v7.0.32 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.20.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect

@@ -28,3 +28,10 @@ const GameRoleGroupName = "game_role"
 const (
 	GameRolePath = "/"
 )
+
+const UserGroupName = "user"
+const (
+	UserPath = "/"
+	UsersPath = "/list"
+	UserPasswordPath = "/password"
+)

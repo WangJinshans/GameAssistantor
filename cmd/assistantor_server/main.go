@@ -5,6 +5,7 @@ import (
 	"game_assistantor/api/login"
 	"game_assistantor/api/role"
 	"game_assistantor/api/v1/game_account"
+	"game_assistantor/api/v1/user"
 	"game_assistantor/config"
 	_ "game_assistantor/docs" // 引入文档
 	"game_assistantor/middlerware"
@@ -48,12 +49,15 @@ func initDatabase() {
 		panic(err)
 	}
 	repository.SetupEngine(engine)
+
 }
 
 func SyncTables() (err error) {
 	err = engine.AutoMigrate(
 		&model.GameAccount{},
 	)
+	//err = engine.Migrator().DropColumn(&GameAccount{},"xxxx_xxx")
+	//log.Info().Msgf("err is: %v", err)
 	return
 }
 
@@ -92,6 +96,13 @@ func StartServer() {
 			gameRoleGroup.POST(route.GameRolePath, game_account.GameRoleApi.AddAccount)
 			gameRoleGroup.GET(fmt.Sprintf("%s:account_id", route.GameRolePath), game_account.GameRoleApi.GetAccountInfo)
 			gameRoleGroup.PATCH(fmt.Sprintf("%s:account_id", route.GameRolePath), game_account.GameRoleApi.UpdateAccountInfo)
+		}
+		userGroup := v1.Group(route.UserGroupName)
+		{
+			userGroup.GET(route.UsersPath, user.UserApi.GetUsersInfo)
+			userGroup.GET(fmt.Sprintf("%s:user_id", route.UserPath), user.UserApi.GetUserInfo)
+			userGroup.PATCH(fmt.Sprintf("%s:user_id", route.UserPath), user.UserApi.UpdateUserInfo)
+			userGroup.PATCH(fmt.Sprintf("%s:user_id", route.UserPasswordPath), user.UserApi.UpdateUserPassword)
 		}
 	}
 	r.Run(":8088")

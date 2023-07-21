@@ -1,17 +1,53 @@
 package user
 
 import (
+	"encoding/base64"
+	"fmt"
+	"game_assistantor/auth"
 	"game_assistantor/common"
+	"game_assistantor/global"
 	"game_assistantor/model"
 	"game_assistantor/repository"
 	"game_assistantor/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"time"
 )
 
 var UserApi ApiUser
 
 type ApiUser struct {
+}
+
+func (*ApiUser) GetUsersInfo(ctx *gin.Context) {
+	type req struct {
+		UserId string `json:"user_id"`
+	}
+	var parameter req
+	err := ctx.BindJSON(&parameter)
+	if err != nil {
+		ctx.JSON(200, gin.H{
+			"code":    common.Fail,
+			"message": "user id not found",
+		})
+		return
+	}
+
+	user, err := repository.UserRepos.GetUserList()
+	if err != nil {
+		log.Info().Msgf("fail to get user, error is: %v", err)
+		ctx.JSON(200, gin.H{
+			"code":    common.Fail,
+			"message": "user not found",
+		})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"code":    common.Success,
+		"message": user,
+	})
+	return
 }
 
 func (*ApiUser) GetUserInfo(ctx *gin.Context) {
@@ -45,72 +81,104 @@ func (*ApiUser) GetUserInfo(ctx *gin.Context) {
 	return
 }
 
+func (*ApiUser) AddUserInfo(context *gin.Context) {
 
-func (*ApiUser) UpdateUserLevel(ctx *gin.Context) {
-	type req struct {
-		UserId  string `json:"user_id"`
-		OrderId string `json:"order_id"`
-	}
-	var updateType int
-	var parameter req
-	var user *model.User
-	err := ctx.BindJSON(&parameter)
+	var user model.User
+	err := context.BindJSON(&user)
 	if err != nil {
-		ctx.JSON(200, gin.H{
-			"code":    common.Fail,
-			"message": "user id not found",
-		})
-		return
-	}
-	if parameter.OrderId != "" {
-		updateType = common.CreateVip // 维持vip
-	} else {
-		updateType = common.CancelVip // 取消vip
-	}
-
-	user, err = repository.UserRepos.GetUser(parameter.UserId)
-	if err != nil {
-		log.Info().Msgf("fail to get user, error is: %v", err)
-		ctx.JSON(200, gin.H{
-			"code":    common.Fail,
-			"message": "user not found",
+		context.JSON(200, gin.H{
+			"message": "password error",
 		})
 		return
 	}
 
-	var m int
-	m, err = repository.UserRepos.GetUpgradeInfo(parameter.OrderId)
+	contextId := context.GetHeader("ctx_id")
+	log.Info().Msgf("encrypt password is %s", user.PassWord)
+	data, err := base64.StdEncoding.DecodeString(user.PassWord)
 	if err != nil {
-		ctx.JSON(200, gin.H{
-			"code":    common.Fail,
-			"message": "order not found",
+		log.Error().Msgf("base64 decode error: %v", err.Error())
+		return
+	}
+
+	privateKey, err := global.GetPrivateKey(contextId)
+	if err != nil {
+		log.Error().Msgf("Decrypt error: %v", err)
+		return
+	}
+
+	passWord, err := utils.RsaDecrypt(data, privateKey)
+	if err != nil {
+		log.Error().Msgf("rsa decrypt error: %v", err.Error())
+		return
+	}
+	global.DeleteKey(contextId)
+	userId := fmt.Sprintf("user_%d", time.Now().Unix())
+	user.UserId = userId
+	user.PassWord = string(passWord)
+	repository.UserRepos.SaveUserPassword(&user)
+
+	var token string
+	token, err = auth.GenerateToken(userId)
+	if err != nil {
+		context.JSON(200, gin.H{
+			"message": "failed",
+			"token":   "",
+			"user_id": "",
 		})
 		return
 	}
-	if updateType == common.CreateVip {
-		ts := utils.GetExpireTimeStamp(0, m, 0, 0, 0, 0) // 过期时间
-		user.LevelExpire = ts
-		user.UserLevel = common.VipLevel
-		if user.FirstVip == common.FirstVip {
-			// 首次
-			user.FirstVip = common.NotFirstVip
-		}
-	} else {
-		user.UserLevel = common.RegularLevel
-	}
-	err = repository.UserRepos.UpdateUser(user)
+	err = repository.SaveToken(token, userId)
 	if err != nil {
-		log.Info().Msgf("fail to get user, error is: %v", err)
-		ctx.JSON(200, gin.H{
-			"code":    common.Fail,
-			"message": "user not found",
+		context.JSON(200, gin.H{
+			"message": "failed",
+			"token":   "",
+			"user_id": "",
+		})
+		return
+	}
+	context.JSON(200, gin.H{
+		"message": userId,
+		"token":   token,
+		"user_id": userId,
+	})
+}
+
+func (*ApiUser) UpdateUserInfo(context *gin.Context) {
+
+	var user model.User
+	err := context.BindJSON(&user)
+	if err != nil {
+		context.JSON(200, gin.H{
+			"message": "password error",
 		})
 		return
 	}
 
-	ctx.JSON(200, gin.H{
-		"code":    common.Success,
+	repository.UserRepos.UpdateUser(&user)
+	context.JSON(200, gin.H{
 		"message": "",
 	})
-	return
+}
+
+func (*ApiUser) UpdateUserPassword(context *gin.Context) {
+
+	var user model.User
+	err := context.BindJSON(&user)
+	if err != nil {
+		context.JSON(200, gin.H{
+			"message": "parameter error",
+		})
+		return
+	}
+
+	err = repository.UserRepos.SaveUserPassword(&user)
+	if err != nil {
+		context.JSON(200, gin.H{
+			"message": "password save error",
+		})
+		return
+	}
+	context.JSON(200, gin.H{
+		"message": "",
+	})
 }
