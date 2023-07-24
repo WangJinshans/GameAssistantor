@@ -74,6 +74,7 @@ func (*ApiGameRole) GetAccountRoleList(ctx *gin.Context) {
 	return
 }
 
+
 func (*ApiGameRole) UpdateAccountInfo(ctx *gin.Context) {
 	type req struct {
 		AccountId   string `json:"account_id" validate:"required"`
