@@ -19,7 +19,7 @@ const (
 // role
 const RoleGroupName = "role"
 const (
-	RolePath = "/"
+	RolePath  = "/"
 	RoleSPath = "/list"
 )
 
@@ -31,7 +31,13 @@ const (
 
 const UserGroupName = "user"
 const (
-	UserPath = "/"
-	UsersPath = "/list"
+	UserPath         = "/"
+	UsersPath        = "/list"
 	UserPasswordPath = "/password"
+)
+
+const DeviceGroupName = "device"
+const (
+	DevicePath  = "/device"
+	DevicesPath = "/list"
 )

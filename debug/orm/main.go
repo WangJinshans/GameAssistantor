@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"game_assistantor/config"
 	"game_assistantor/repository"
-	"github.com/BurntSushi/toml"
-	"github.com/rs/zerolog/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -40,12 +38,12 @@ type CreditCard struct {
 }
 
 func init() {
-	_, err := toml.DecodeFile("config.toml", &conf)
-	if err != nil {
-		log.Error().Msgf("fail to decode config.toml, error is: %v", err)
-		return
-	}
-	initDatabase()
+	//_, err := toml.DecodeFile("config.toml", &conf)
+	//if err != nil {
+	//	log.Error().Msgf("fail to decode config.toml, error is: %v", err)
+	//	return
+	//}
+	//initDatabase()
 }
 
 // reference: https://blog.csdn.net/weixin_46618592/article/details/127194231

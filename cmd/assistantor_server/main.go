@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"game_assistantor/api/login"
 	"game_assistantor/api/role"
+	"game_assistantor/api/v1/device"
 	"game_assistantor/api/v1/game_account"
 	"game_assistantor/api/v1/user"
 	"game_assistantor/config"
@@ -12,6 +13,8 @@ import (
 	"game_assistantor/model"
 	"game_assistantor/repository"
 	"game_assistantor/route"
+	"game_assistantor/service"
+
 	"github.com/BurntSushi/toml"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -71,6 +74,8 @@ func StartServer() {
 	r.Static("/static", "../../static/")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // swag init -g ./cmd/assistantor_server
 
+	go service.StartDeviceService() // 启动设备服务
+
 	v1 := r.Group(route.RouterVersionGroupName)
 	{
 		base := v1.Group(route.BaseGroupName)
@@ -103,6 +108,11 @@ func StartServer() {
 			userGroup.GET(fmt.Sprintf("%s:user_id", route.UserPath), user.UserApi.GetUserInfo)
 			userGroup.PATCH(fmt.Sprintf("%s:user_id", route.UserPath), user.UserApi.UpdateUserInfo)
 			userGroup.PATCH(fmt.Sprintf("%s:user_id", route.UserPasswordPath), user.UserApi.UpdateUserPassword)
+		}
+		deviceGroup := v1.Group(route.DeviceGroupName)
+		{
+			deviceGroup.GET(route.DevicesPath, device.DeviceApi.GetDevicesList)
+			deviceGroup.GET("/:device_id/send", device.DeviceApi.SendDeviceCommand)
 		}
 	}
 	r.Run(":8088")
