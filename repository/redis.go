@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"game_assistantor/common"
 	"fmt"
+	"game_assistantor/common"
 	"github.com/matryer/try"
 	"github.com/rs/zerolog/log"
 	"time"

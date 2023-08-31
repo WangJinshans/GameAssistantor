@@ -39,8 +39,8 @@ const docTemplate = `{
             }
         },
         "/login": {
-            "get": {
-                "description": "登录",
+            "post": {
+                "description": "post 登录",
                 "produces": [
                     "application/json"
                 ],

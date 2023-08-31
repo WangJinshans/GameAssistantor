@@ -3,10 +3,15 @@ package global
 import (
 	"context"
 	"errors"
-	"github.com/casbin/casbin/v2"
 	"sync"
 	"time"
+
+	"github.com/casbin/casbin/v2"
 )
+
+var CommandPort int
+var TTL int
+var Protocol string
 
 var keyMap map[string]map[string]interface{}
 var mutex sync.RWMutex

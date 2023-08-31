@@ -1,18 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"game_assistantor/api/login"
 	"game_assistantor/config"
 	"game_assistantor/middlerware"
 	"game_assistantor/model"
 	"game_assistantor/repository"
-	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
+
 
 var (
 	conf   config.AssistantConfig
@@ -50,7 +51,7 @@ func StartServer() {
 	r.Use(middlerware.Cors())
 	r.Use(gin.Recovery())
 
-	r.GET("/get_public_key", login.GetPublicKey)
+	r.GET("/api/public_key", login.GetPublicKey)
 	r.POST("/login", login.Login)
 	r.POST("/register", login.Register)
 	r.POST("/refresh_token", login.RefreshToken)

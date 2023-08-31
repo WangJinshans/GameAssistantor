@@ -4,7 +4,7 @@
 address = "127.0.0.1:3306"
 username = "root"
 password = "wangjinshan123.."
-database = "assistantor"
+database = "game_assistantor"
 
 [redis]
 address = "127.0.0.1:6379"

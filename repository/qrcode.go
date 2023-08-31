@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"game_assistantor/model"
 	"encoding/json"
+	"game_assistantor/model"
 	"time"
 )
 

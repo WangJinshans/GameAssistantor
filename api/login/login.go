@@ -3,6 +3,7 @@ package login
 import (
 	"encoding/base64"
 	"fmt"
+	"game_assistantor/api/v1/user"
 	"game_assistantor/auth"
 	"game_assistantor/common"
 	"game_assistantor/global"
@@ -52,12 +53,12 @@ func GetPublicKey(c *gin.Context) {
 }
 
 // @登录
-// @Description 登录
+// @Description post 登录
 // @Produce json
 // @Param user_name formData string true "用户名"
 // @Param pass_word formData string true "密码"
 // @Success 200 {object} LoginResponse
-// @Router /login [get]
+// @Router /login [post]
 func Login(context *gin.Context) {
 	var user model.User
 	err := context.BindJSON(&user)
@@ -69,7 +70,6 @@ func Login(context *gin.Context) {
 		return
 	}
 	contextId := context.GetHeader("ctx_id")
-
 	privateKey, err := global.GetPrivateKey(contextId)
 	if err != nil {
 		log.Error().Msgf("Decrypt error: %v", err)
@@ -127,66 +127,7 @@ func Login(context *gin.Context) {
 }
 
 func Register(context *gin.Context) {
-
-	var user model.User
-	err := context.BindJSON(&user)
-	if err != nil {
-		context.JSON(200, gin.H{
-			"message": "password error",
-		})
-		return
-	}
-
-	contextId := context.GetHeader("ctx_id")
-
-	log.Info().Msgf("encrypt password is %s", user.PassWord)
-	data, err := base64.StdEncoding.DecodeString(user.PassWord)
-	if err != nil {
-		log.Error().Msgf("base64 decode error: %v", err.Error())
-		return
-	}
-
-	privateKey, err := global.GetPrivateKey(contextId)
-	if err != nil {
-		log.Error().Msgf("Decrypt error: %v", err)
-		return
-	}
-
-	passWord, err := utils.RsaDecrypt(data, privateKey)
-	if err != nil {
-		log.Error().Msgf("rsa decrypt error: %v", err.Error())
-		return
-	}
-	global.DeleteKey(contextId)
-	userId := fmt.Sprintf("user_%d", time.Now().Unix())
-	user.UserId = userId
-	user.PassWord = string(passWord)
-	repository.UserRepos.SaveUserPassword(&user)
-
-	var token string
-	token, err = auth.GenerateToken(userId)
-	if err != nil {
-		context.JSON(200, gin.H{
-			"message": "failed",
-			"token":   "",
-			"user_id": "",
-		})
-		return
-	}
-	err = repository.SaveToken(token, userId)
-	if err != nil {
-		context.JSON(200, gin.H{
-			"message": "failed",
-			"token":   "",
-			"user_id": "",
-		})
-		return
-	}
-	context.JSON(200, gin.H{
-		"message": userId,
-		"token":   token,
-		"user_id": userId,
-	})
+	user.UserApi.AddUserInfo(context)
 }
 
 func RefreshToken(ctx *gin.Context) {
