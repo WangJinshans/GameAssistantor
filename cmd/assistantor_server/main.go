@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"game_assistantor/api/login"
 	"game_assistantor/api/role"
@@ -14,8 +15,11 @@ import (
 	"game_assistantor/repository"
 	"game_assistantor/route"
 	"game_assistantor/service"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/BurntSushi/toml"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	swaggerFiles "github.com/swaggo/files"
@@ -25,17 +29,22 @@ import (
 )
 
 var (
-	conf   config.AssistantConfig
-	engine *gorm.DB
+	engine  *gorm.DB
+	signals chan os.Signal
+	conf    config.AssistantConfig
 )
 
 func init() {
-	_, err := toml.DecodeFile("config.toml", &conf)
-	if err != nil {
-		log.Error().Msgf("fail to decode config.toml, error is: %v", err)
-		return
-	}
-	initDatabase()
+	// _, err := toml.DecodeFile("config.toml", &conf)
+	// if err != nil {
+	// 	log.Error().Msgf("fail to decode config.toml, error is: %v", err)
+	// 	return
+	// }
+
+	signals = make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	// initDatabase()
 }
 
 func initDatabase() {
@@ -64,7 +73,7 @@ func SyncTables() (err error) {
 	return
 }
 
-func StartServer() {
+func StartWebServer(ctx context.Context) {
 
 	r := gin.New()
 	r.Use(middlerware.Cors())
@@ -73,8 +82,6 @@ func StartServer() {
 
 	r.Static("/static", "../../static/")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // swag init -g ./cmd/assistantor_server
-
-	go service.StartDeviceService() // 启动设备服务
 
 	v1 := r.Group(route.RouterVersionGroupName)
 	{
@@ -120,5 +127,16 @@ func StartServer() {
 }
 
 func main() {
-	StartServer()
+
+	ctx := context.Background()
+	cancleCtx, cancleFunc := context.WithCancel(ctx)
+
+	// go StartWebServer(cancleCtx)
+	go service.StartDeviceService(cancleCtx) // 启动设备服务
+
+	<-signals
+	log.Info().Msg("start to stop service...")
+	cancleFunc()
+	log.Info().Msg("start to count down 2 second...")
+	time.Sleep(2 * time.Second)
 }

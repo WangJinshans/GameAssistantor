@@ -1,49 +1,214 @@
 package service
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"game_assistantor/network"
+	"game_assistantor/utils"
+	"strings"
 
+	"github.com/go-redis/redis"
 	"github.com/rs/zerolog/log"
 )
 
-var exitChan chan bool
-var nativeServer *network.NaiveServer
+type GroupMessage struct {
+	SenderId   string // 发送id
+	ReceiverId string // 接受id
+	DeviceType string
+	Message    string
+}
 
-func StartDeviceService() {
+var (
+	env string
+	app string
 
-	exitChan = make(chan bool, 1)
+	host        string
+	hostAddress string
+
+	commandPort    int // grpc 命令下行服务端口
+	serverType     string
+	connectionType string // 连接类型 是否断开连接
+	nativeServer   *network.NaiveServer
+	redisClient    *redis.Client
+	logLevel       string
+	platForm       string
+	protocol       string // protocol
+
+	redisHost        string
+	redisPort        int
+	redisPassword    string
+	redisDB          int
+	redisReadTimeout int
+
+	port            int
+	socketTimeout   int
+	sendCommandPort int
+	messageChan     chan GroupMessage
+)
+
+func init() {
+	messageChan = make(chan GroupMessage, 100)
+}
+
+func HandMessage(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info().Msg("start to quit handle")
+			return
+		case msg := <-messageChan:
+			SendGroupMessage(msg)
+		}
+	}
+}
+
+func SendGroupMessage(msg GroupMessage) {
+	connectionMap := nativeServer.GetConnectionMap()
+	fromId := msg.SenderId
+	receiverId := msg.ReceiverId
+	log.Info().Msgf("from id is: %s, receive id is: %s", fromId, receiverId)
+	log.Info().Msgf("connectionMap is: %v", connectionMap)
+
+	if receiverId == "all" {
+		for _, conn := range connectionMap {
+			log.Info().Msgf("device id: %s, connection type is: %s", conn.GetID(), conn.DeviceType)
+			if conn.GetID() == fromId {
+				// 不转发自己
+				continue
+			}
+			conn.SendMessageChan <- fmt.Sprintf("%s\n", msg.Message)
+		}
+	} else {
+		conn, ok := connectionMap[receiverId]
+		if !ok {
+			log.Error().Msgf("attemp to sync data to empty conn")
+			return
+		}
+		conn.SendMessageChan <- fmt.Sprintf("%s\n", msg.Message)
+	}
+
+}
+
+func StartDeviceService(ctx context.Context) {
+
+	//redisClient = util.GetRedisClientWithTimeOut(redisHost, redisPort, redisPassword, redisDB, redisReadTimeout)
 
 	serverConfig := network.ServerConfig{
-		Address:       "0.0.0.0:12000",
-		Timeout:       60,
-		MaxConnection: 100,
+		Address: "0.0.0.0:12000",
+		Timeout: socketTimeout,
 	}
 	nativeServer = network.NewNativeServer(&serverConfig)
 	nativeServer.RegisterCallbacks(connectionMade, connectionLost, messageReceived)
 
-	nativeServer.Listen()
-	<-exitChan
+	go HandMessage(ctx)
+	go nativeServer.Listen()
+
+	select {
+	case <-ctx.Done():
+		nativeServer.Stop()
+		break
+	}
 }
 
-func connectionMade(c *network.Connection, vin string) {
-	log.Info().Msgf("Receive new connection from %v, vin: %s", c.RemoteAddr(), vin)
-	c.SetID(vin) // 设置当前连接Id
+func connectionMade(c *network.Connection, deviceId string) {
+	c.MarkConnection(deviceId)
+	log.Info().Msgf("Receive new connection from device id: %s, device type is: %s", deviceId, c.DeviceType)
+
+	//dataSet := make(map[string]interface{})
+	//dataSet["deviceId"] = deviceId
+	//dataSet["host"] = host
+	//dataSet["address"] = hostAddress
+	//dataSet["last_updated"] = time.Now().Unix()
+	//vinKey := fmt.Sprintf("%s_%s", common.ConnectionKey, deviceId)
+	//
+	//.HMSet(vinKey, dataSet)
 }
 
-// 不会很频繁
-func messageReceived(c *network.Connection, segment []byte) {
-	log.Info().Msgf("receive message: %s", segment)
-	connectionMade(c, "deviceId01")
+func messageReceived(c *network.Connection, data []byte) {
+
+	segment := string(data)
+	log.Info().Msgf("Receive segment: %s", segment)
+	if len(c.Left) > 0 {
+		segment = c.Left + segment
+	}
+
+	messages, _, _ := Split(segment)
+	for _, message := range messages {
+		info := strings.Split(message, "@")
+		deviceId := info[0][1:]
+		deviceType := info[1]
+		receiverId := info[2]
+
+		if deviceType != "" {
+			c.DeviceType = deviceType
+		}
+		if c.IsFirstMessage {
+			connectionMade(c, deviceId)
+			c.IsFirstMessage = false
+		}
+		var msg GroupMessage
+		msg.SenderId = deviceId
+		msg.DeviceType = deviceType
+		msg.Message = message
+		msg.ReceiverId = receiverId
+		if receiverId != "init" {
+			messageChan <- msg
+		}
+	}
 }
 
 func connectionLost(c *network.Connection, err error) {
-	log.Info().Msgf("Connection lost with client %v, vin: %s, err: %v", c.RemoteAddr(), c.GetID(), err)
-	// vin := c.GetID()
+	deviceId := c.GetID()
+	log.Info().Msgf("Connection lost with client, deviceId: %s, err: %v", deviceId, err)
+}
+
+// #device_server@publisher@32@up@end_string#g#
+// #device_server@publisher@88@up@end_string#ring#
+// #device_server@publisher@88@down@end_strin
+func Split(segment string) (messages []string, left string, invalidMessage [][]byte) {
+
+	if len(segment) < 12 {
+		left = segment
+		return
+	}
+	startFlag := "#"
+	var indexList []int
+	for index := 0; index < len(segment); index++ {
+		sf := string(segment[index])
+		if sf == startFlag {
+			indexList = append(indexList, index)
+		}
+	}
+	if len(indexList) == 1 {
+		left = segment
+	}
+	var i int
+	log.Info().Msgf("segment is: %s, index list is: %v", segment, indexList)
+	for i < len(indexList) {
+		message := segment[indexList[i] : indexList[i+1]+1]
+		if len(message) == 0 {
+			break
+		}
+		if message == "##" {
+			break
+		}
+		// log.Info().Msgf("message is: %s", message)
+		ok := utils.CheckPackage(message)
+
+		if !ok {
+			log.Error().Msgf("package error: %s", message)
+			continue
+		}
+		messages = append(messages, message)
+		i += 2
+	}
+
+	return
 }
 
 func GetDeviceList() (deviceList []string, err error) {
-	deviceMap := nativeServer.GetIDSet()
+	deviceMap := nativeServer.GetConnectionMap()
 	if len(deviceMap) == 0 {
 		err = errors.New("empty device")
 		return
@@ -60,7 +225,6 @@ func GetDeviceList() (deviceList []string, err error) {
 
 func StopService() {
 	nativeServer.Stop()
-	exitChan <- true
 }
 
 func SendCommand(deviceId string, command []byte) (err error) {
