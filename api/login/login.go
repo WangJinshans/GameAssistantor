@@ -10,11 +10,12 @@ import (
 	"game_assistantor/model"
 	"game_assistantor/repository"
 	"game_assistantor/utils"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
-	"time"
 )
 
 type Response struct {
@@ -156,7 +157,6 @@ func RefreshToken(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{
 		"message": "empty token",
 	})
-	return
 }
 
 func Logout(ctx *gin.Context) {
@@ -174,5 +174,4 @@ func Logout(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{
 		"message": "ok",
 	})
-	return
 }

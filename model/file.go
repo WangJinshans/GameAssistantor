@@ -4,9 +4,9 @@ import "gorm.io/gorm"
 
 type FilePartition struct {
 	gorm.Model
-	FileId        string          `gorm:"index" json:"file_id,omitempty"`
-	FileName      string          `json:"file_name,omitempty"`
-	FilePath      string          `json:"file_path,omitempty"`
+	FileId   string `gorm:"index" json:"file_id,omitempty"`
+	FileName string `json:"file_name,omitempty"`
+	FilePath string `json:"file_path,omitempty"`
 	//PartitionList []PartitionInfo `gorm:"foreignKey:FileId;references:FileId" json:"partition_list,omitempty"`
 	//PartitionList []PartitionInfo `gorm:"foreignKey:FileId" json:"partition_list,omitempty"`
 	PartitionList []PartitionInfo `gorm:"foreignKey:file_id" json:"partition_list,omitempty"`
@@ -19,4 +19,3 @@ type PartitionInfo struct {
 	SegmentName string `json:"segment_name"`
 	SegmentPath string `json:"segment_path"`
 }
-

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"game_assistantor/model"
+
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 )

@@ -232,6 +232,5 @@ func SendCommand(deviceId string, command []byte) (err error) {
 	if conn != nil {
 		err = conn.Send(command)
 	}
-
 	return
 }

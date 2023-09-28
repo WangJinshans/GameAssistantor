@@ -15,10 +15,14 @@ import (
 	"game_assistantor/repository"
 	"game_assistantor/route"
 	"game_assistantor/service"
+	"game_assistantor/utils"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/BurntSushi/toml"
+	"github.com/go-redis/redis"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -29,22 +33,29 @@ import (
 )
 
 var (
-	engine  *gorm.DB
-	signals chan os.Signal
-	conf    config.AssistantConfig
+	engine      *gorm.DB
+	signals     chan os.Signal
+	conf        config.AssistantConfig
+	redisClient *redis.Client
 )
 
 func init() {
-	// _, err := toml.DecodeFile("config.toml", &conf)
-	// if err != nil {
-	// 	log.Error().Msgf("fail to decode config.toml, error is: %v", err)
-	// 	return
-	// }
+	_, err := toml.DecodeFile("config.toml", &conf)
+	if err != nil {
+		log.Error().Msgf("fail to decode config.toml, error is: %v", err)
+		return
+	}
 
 	signals = make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
-	// initDatabase()
+	initDatabase()
+	initRedis()
+}
+
+func initRedis() {
+	redisClient = utils.GetRedisClient(conf.Redis.Address, conf.Redis.DB, conf.Redis.Password)
+	repository.SetupRedisClient(redisClient)
 }
 
 func initDatabase() {
@@ -67,6 +78,7 @@ func initDatabase() {
 func SyncTables() (err error) {
 	err = engine.AutoMigrate(
 		&model.GameAccount{},
+		&model.ScreenReportInfo{},
 	)
 	//err = engine.Migrator().DropColumn(&GameAccount{},"xxxx_xxx")
 	//log.Info().Msgf("err is: %v", err)
@@ -119,7 +131,10 @@ func StartWebServer(ctx context.Context) {
 		deviceGroup := v1.Group(route.DeviceGroupName)
 		{
 			deviceGroup.GET(route.DevicesPath, device.DeviceApi.GetDevicesList)
-			deviceGroup.GET("/:device_id/send", device.DeviceApi.SendDeviceCommand)
+			deviceGroup.POST("/command", device.DeviceApi.SendDeviceCommand)
+			deviceGroup.POST("/report", device.DeviceApi.StatusReport)
+			deviceGroup.POST("/set_report", device.DeviceApi.SetReportStatus)
+			deviceGroup.GET("/get_reports", device.DeviceApi.GetReportList)
 		}
 	}
 	r.Run(":8088")
@@ -131,7 +146,7 @@ func main() {
 	ctx := context.Background()
 	cancleCtx, cancleFunc := context.WithCancel(ctx)
 
-	// go StartWebServer(cancleCtx)
+	go StartWebServer(cancleCtx)
 	go service.StartDeviceService(cancleCtx) // 启动设备服务
 
 	<-signals
