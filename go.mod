@@ -9,8 +9,8 @@ require (
 	github.com/casbin/casbin/v2 v2.51.2
 	github.com/casbin/gorm-adapter/v3 v3.7.4
 	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927 // indirect
+	github.com/coocood/freecache v1.2.4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/dtm-labs/client v1.18.7
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-openapi/spec v0.20.6 // indirect
@@ -19,8 +19,8 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/uuid v1.3.0
+	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/lib/pq v1.10.6 // indirect
-	github.com/lithammer/shortuuid/v3 v3.0.7
 	github.com/matryer/try v0.0.0-20161228173917-9ac251b645a2
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/olivere/elastic/v7 v7.0.32
@@ -33,7 +33,9 @@ require (
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe
 	github.com/swaggo/gin-swagger v1.5.1
 	github.com/swaggo/swag v1.8.4
+	github.com/tidwall/gjson v1.17.1
 	github.com/unrolled/secure v1.12.0
+	github.com/wenlng/go-captcha v1.2.5
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 	golang.org/x/net v0.0.0-20220726230323-06994584191e // indirect
 	golang.org/x/sys v0.0.0-20220727055044-e65921a090b8 // indirect

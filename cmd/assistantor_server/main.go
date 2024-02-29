@@ -6,7 +6,6 @@ import (
 	"game_assistantor/api/login"
 	"game_assistantor/api/role"
 	"game_assistantor/api/v1/device"
-	"game_assistantor/api/v1/game_account"
 	"game_assistantor/api/v1/user"
 	"game_assistantor/config"
 	_ "game_assistantor/docs" // 引入文档
@@ -14,7 +13,6 @@ import (
 	"game_assistantor/model"
 	"game_assistantor/repository"
 	"game_assistantor/route"
-	"game_assistantor/service"
 	"game_assistantor/utils"
 	"os"
 	"os/signal"
@@ -115,12 +113,6 @@ func StartWebServer(ctx context.Context) {
 			roleGroup.GET(route.RoleSPath, role.RoleApi.GetAllRoles)
 			roleGroup.DELETE(fmt.Sprintf("%s:account_id", route.RolePath), role.RoleApi.DeleteRole)
 		}
-		gameRoleGroup := v1.Group(route.GameRoleGroupName)
-		{
-			gameRoleGroup.POST(route.GameRolePath, game_account.GameRoleApi.AddAccount)
-			gameRoleGroup.GET(fmt.Sprintf("%s:account_id", route.GameRolePath), game_account.GameRoleApi.GetAccountInfo)
-			gameRoleGroup.PATCH(fmt.Sprintf("%s:account_id", route.GameRolePath), game_account.GameRoleApi.UpdateAccountInfo)
-		}
 		userGroup := v1.Group(route.UserGroupName)
 		{
 			userGroup.GET(route.UsersPath, user.UserApi.GetUsersInfo)
@@ -147,11 +139,10 @@ func main() {
 	cancleCtx, cancleFunc := context.WithCancel(ctx)
 
 	go StartWebServer(cancleCtx)
-	go service.StartDeviceService(cancleCtx) // 启动设备服务
+	// go service.StartDeviceService(cancleCtx) // 启动设备服务
 
 	<-signals
-	log.Info().Msg("start to stop service...")
 	cancleFunc()
-	log.Info().Msg("start to count down 2 second...")
+	// 剩下2s等待退出
 	time.Sleep(2 * time.Second)
 }

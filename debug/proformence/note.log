@@ -1,0 +1,11 @@
+
+1. GOMAXPROCS 默认等于机器CPU核心数, 设置不合理会影响并发性能, 可通过 runtime.GOMAXPROCS(numCPUs)设置
+2. 减少内存分配(map, slice等), 尽量复用内存 sync.Pool
+3. wrk 压测工具
+4. 减少GC
+5. 合理缓存静态文件, js, 图片短视频等等或者使用cdn, 合理使用oss等
+6. 合理使用数据库, mysql建立合理索引, redis等等
+7. 合理利用算法
+8. 限流 + 分布式 + 微服务
+9. 构建API监控系统, 对系统API相应时间进行监控
+

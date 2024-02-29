@@ -1,8 +1,94 @@
 
 
+
+
+map分段锁:
+type FragmentMap struct {
+	dataMap        map[string]interface{}
+	sync.RWMutex // 读写锁, 保护dataMap
+}
+
+
+type ConcurrentHashMap []*FragmentMap
+
+func fnv32(key string) uint32 {
+   // 著名的fnv哈希函数, 由 Glenn Fowler、Landon Curt Noll和 Kiem-Phong Vo 创建
+   hash := uint32(2166136261)
+   const prime32 = uint32(16777619)
+   keyLength := len(key)
+   for i := 0; i < keyLength; i++ {
+      hash *= prime32
+      hash ^= uint32(key[i])
+   }
+   return hash
+}
+
+
+func (m ConcurrentHashMap) GetShardMap(key string) *SharedMap {
+	return m[uint(fnv32(key))%uint(ShardCount)]
+}
+
+// Set 添加 key-value
+func (m ConcurrentHashMap) Set(key string, value interface{}) {
+   // Get map shard.
+   shard := m.GetShardMap(key)
+   shard.Lock()
+   shard.items[key] = value
+   shard.Unlock()
+}
+
+
+// Get 返回指定key的value值
+func (m ConcurrentHashMap) Get(key string) (interface{}, bool) {
+   shard := m.GetShardMap(key)
+   shard.RLock()
+   val, ok := shard.items[key]
+   shard.RUnlock()
+   return val, ok
+}
+
+
+// Remove 删除一个元素
+func (m ConcurrentHashMap) Remove(key string) {
+   // Try to get shard.
+   shard := m.GetShardMap(key)
+   shard.Lock()
+   delete(shard.items, key)
+   shard.Unlock()
+}
+
+
+// Has 判断元素是否存在
+func (m ConcurrentHashMap) Has(key string) bool {
+   // Get shard
+   shard := m.GetShardMap(key)
+   shard.RLock()
+   // See if element is within shard.
+   _, ok := shard.items[key]
+   shard.RUnlock()
+   return ok
+}
+
+// Count 统计元素总数
+func (m ConcurrentHashMap) Count() int {
+   count := 0
+   for i := 0; i < ShardCount; i++ {
+      shard := m[i]
+      shard.RLock()
+      count += len(shard.items)
+      shard.RUnlock()
+   }
+   return count
+}
+
+参考: https://www.cnblogs.com/yinbiao/p/15884420.html
+
+
+
+
 1. 支付倒计时: 延时队列, RabbitMQ, Redis Zset 截止时间作为Score
 2. 分布式锁: Redis, 当前线程设置随机值, 执行成功后需要读取值并判断是否是当前线程设置的值, 防止业务逻辑执行时间过长导致key过期, 另外的节点设置相同的key, 同时当前逻辑执行成功后删掉其他节点设置的key
-3. 朋友圈(关注列表Feed流): 推模式与拉模式, 判断用户是否活跃, 是否大V, 分页可采用last_id来做, https://cloud.tencent.com/developer/article/1744756
+3. 朋友圈(关注列表Feed流): 推模式与拉模式, 判断用户是否活跃, 是否大V, 分页可采用last_id来做, https://cloud.tencent.com/developer/article/1744756, (总页数可用redis, incr新增, 同时新增定时任务晚上从db同步到redis)
 4. 推荐: 基于推荐算法实现的Feed流
 4. 好友关系: Redis集合, BitMap
 5. 直播服务: 
@@ -33,3 +119,13 @@
 
 9. Elastic Search原理: 
       倒排索引: 
+
+
+10.大型分布式系统, 付款成功, 但是配送数据写入失败, 是否存在必须要写入成功但是写入失败的情况, 是否存在多个系统协同全部满足条件才进行下一步的系统
+   
+   多服务多条件 ==> 协同管理器 ==> 处理结果
+   服务A  \           / 服务A
+   服务B --  处理器 --   服务B
+   服务C  /           \ 服务C
+
+   table_name sql

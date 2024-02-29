@@ -2,9 +2,10 @@ package es
 
 import (
 	"context"
+	"testing"
+
 	"github.com/olivere/elastic/v7"
 	"github.com/rs/zerolog/log"
-	"testing"
 )
 
 func ConnectElasticSearch() (client *elastic.Client, err error) {

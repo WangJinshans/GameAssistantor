@@ -2,9 +2,10 @@ package auth
 
 import (
 	"errors"
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"time"
 )
 
 const (
@@ -19,7 +20,7 @@ type JWTClaims struct {
 	UserId string
 }
 
-//生成 jwt token
+// 生成 jwt token
 func GenerateToken(userId string) (string, error) {
 	claims := &JWTClaims{
 		UserId: userId,
@@ -34,7 +35,7 @@ func GenerateToken(userId string) (string, error) {
 	return signedToken, nil
 }
 
-//验证jwt token
+// 验证jwt token
 func Verify(ctx *gin.Context) (*JWTClaims, error) {
 	strToken := ctx.Request.Header.Get("token")
 	return VerifyToken(strToken)

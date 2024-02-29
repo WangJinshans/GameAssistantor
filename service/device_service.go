@@ -87,7 +87,6 @@ func SendGroupMessage(msg GroupMessage) {
 		}
 		conn.SendMessageChan <- fmt.Sprintf("%s\n", msg.Message)
 	}
-
 }
 
 func StartDeviceService(ctx context.Context) {

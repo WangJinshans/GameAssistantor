@@ -3,6 +3,7 @@ package role
 import (
 	"game_assistantor/common"
 	"game_assistantor/global"
+
 	"github.com/gin-gonic/gin"
 )
 

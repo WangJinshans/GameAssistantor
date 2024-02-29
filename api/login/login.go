@@ -70,6 +70,7 @@ func Login(context *gin.Context) {
 		})
 		return
 	}
+
 	contextId := context.GetHeader("ctx_id")
 	privateKey, err := global.GetPrivateKey(contextId)
 	if err != nil {
