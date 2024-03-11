@@ -1,0 +1,86 @@
+
+笔记: https://blog.csdn.net/qq_29744347/article/details/128847754
+
+
+pb:
+
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+option go_package = "Study/Seven/D;Dbp";
+
+message Request {
+  string Data = 1;
+}
+
+message Response {
+  string Data = 1;
+}
+
+service http {
+  rpc ping(Request) returns(Response);
+}
+
+
+
+client:
+
+package main
+
+import (
+	Dbp "Study/Seven/D"
+	"context"
+	"fmt"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+)
+
+func main() {
+	dial, _ := grpc.Dial(":8083", grpc.WithInsecure())
+	client := Dbp.NewHttpClient(dial)
+	m1 := metadata.Pairs("token", "xie_123456", "age", "18")
+	outgoingContext := metadata.NewOutgoingContext(context.Background(), m1)
+	res, _ := client.Ping(outgoingContext, &Dbp.Request{
+		Data: "abc",
+	})
+	fmt.Println(res.Data) //xie_123456
+}
+
+
+
+server:
+
+package main
+
+import (
+	Dbp "Study/Seven/D"
+	"context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	"net"
+)
+
+type Service struct{}
+
+func (s Service) Ping(ctx context.Context, request *Dbp.Request) (*Dbp.Response, error) {
+	var token string
+	if incomingContext, ok := metadata.FromIncomingContext(ctx); ok {
+		for k, v := range incomingContext {
+			if k == "token" {
+				token = v[0]
+			}
+		}
+	}
+
+	return &Dbp.Response{
+		Data: token,
+	}, nil
+}
+
+func main() {
+	server := grpc.NewServer()
+	Dbp.RegisterHttpServer(server, &Service{})
+	listen, _ := net.Listen("tcp", ":8083")
+	server.Serve(listen)
+}
+
+从metadata.FromIncomingContext(ctx)中获取数据
