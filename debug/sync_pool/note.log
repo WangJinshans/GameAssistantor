@@ -1,0 +1,48 @@
+
+
+sync.pool建立对象池, 是临时对象池, 存储的是临时对象, 不可以用它来存储socket长连接和数据库连接池等, 本质上是复用对象来减少内存分配带来的GC压力
+在GMP模型中, 每个p都有一个poolLocal, put以及get的时候都会优先去本地对象池中的数据, 减少并发
+
+
+巧用CPUcache
+
+参考: 
+https://zhuanlan.zhihu.com/p/399150710
+https://www.qiyacloud.cn/2021/03/2021-03-01: 每次GC开始的时候, gcStart 调用clearpools()函数, 里面会调用poolCleanup()函数, 每次GC都会对pool进行清理
+
+
+// pool的全局变量, 每个pool对象都会被注册
+var (
+	// 互斥用
+	allPoolsMu Mutex
+
+	// 全局的 Pool 数组，所有的 Pool 都在这里有注册地址
+	allPools []*Pool
+
+	// 配合 victim 机制用的；
+	oldPools []*Pool
+)
+
+
+
+func poolCleanup() {
+	// 清理 oldPools 上的 victim 的元素
+	for _, p := range oldPools {
+		p.victim = nil
+		p.victimSize = 0
+	}
+
+	// 把 local cache 迁移到 victim 上；
+	// 这样就不致于让 GC 把所有的 Pool 都清空了，有 victim 再兜底以下，这样可以防止抖动；
+	for _, p := range allPools {
+		p.victim = p.local
+		p.victimSize = p.localSize
+		p.local = nil
+		p.localSize = 0
+	}
+
+	// 清理一波所有的 allPools
+	oldPools, allPools = allPools, nil
+}
+
+victim 把回收动作由一次变为了两次，这样更抗造一点。每次清理都是只有上次 cache 的对象才会被真正清理掉，当前的 cache 对象只是移到回收站(victim)

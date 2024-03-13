@@ -1,0 +1,36 @@
+
+主要是一个hash分为两部分(低位bash和高位hash)低位用于查找bucket,然后tophash快速判断bucket中各个位置是为空
+
+delete 只做标记, 并不真正删除数据
+
+key和value分开保存, 内存对齐
+
+hmap中的bucket中保存[]bmap, 每个bmap为bucket存在8个插槽, 每个bucket是bmap结构, bmap中存在overflow指针, 存溢出数据, hash冲突时的解决方案
+
+hmap中 extra字段: 
+bmap 这个结构体里有一个 overflow 指针，它指向溢出的 bucket, 因为它是一个指针, 所以 GC 的时候肯定要扫描它, 也就要扫描所有的bmap
+而当map的key/value都是非指针类型的话, 扫描是可以避免的, 直接标记整个map的颜色(三色标记法)就行了, 不用去扫描每个bmap的overflow指针
+但是溢出的bucket总是可能存在的, 这和key/value的类型无关, 于是就利用hmap里的extra结构体的overflow指针来处理这些overflow的bucket, 
+并把bmap结构体的overflow指针类型变成一个unitptr类型(这些是在编译期干的), 于是整个bmap就完全没有指针了, 也就不会在GC期间被扫描, 
+当GC在扫描hmap时, 通过 extra.overflow 这条路径(指针)就可以将overflow的bucket正常标记成黑色, 从而不会被GC错误地回收.
+
+map的key和value要不要在GC里扫描, 和类型是有关的。数组类型是个值类型, string 底层也是指针, 但是key/value大于128字节的时候, 会退化成指针类型
+
+当map中计算出来的负载因子超过0.65时, 将会触发扩容, go会预分配一个2倍的空间, 在实际使用的时候才会初始化
+当map中溢出桶较多时, 将会触发等量扩容, 删除空key/value, 键值迁移
+
+
+
+扩容需要处理的问题是, 扩容后, map中原本的数据重新放到扩容后的map中, 即数据迁移问题, golang中map扩容时核心函数有如下几个
+
+1.hashGrow: 负责初始化新的桶, 以及设置扩容后的map的各个字段
+2.growWork: 每调用一次growWork函数, 都至多会迁移两个桶的数据
+3.evacuate: 真正负责迁移数据的函数, 会负责迁移指定桶中的数据
+4.advanceEvacuationMark: 收尾工作, 增加nevacuate, 如果所有的oldbuckets都迁移完成了, 会摘除oldbuckets
+
+map迁移并没一蹴而就, 而是每次迁移2个bucket, 避免一次迁移大量数据造成性能问题
+
+
+参考: 
+https://juejin.cn/post/6977302491520040996
+https://juejin.cn/post/7102005935081521160

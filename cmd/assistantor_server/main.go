@@ -75,7 +75,6 @@ func initDatabase() {
 
 func SyncTables() (err error) {
 	err = engine.AutoMigrate(
-		&model.GameAccount{},
 		&model.ScreenReportInfo{},
 	)
 	//err = engine.Migrator().DropColumn(&GameAccount{},"xxxx_xxx")
