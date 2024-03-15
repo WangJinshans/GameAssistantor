@@ -4,7 +4,7 @@ sync.pool建立对象池, 是临时对象池, 存储的是临时对象, 不可�
 在GMP模型中, 每个p都有一个poolLocal, put以及get的时候都会优先去本地对象池中的数据, 减少并发
 
 
-巧用CPUcache
+巧用CPU cache
 
 参考: 
 https://zhuanlan.zhihu.com/p/399150710

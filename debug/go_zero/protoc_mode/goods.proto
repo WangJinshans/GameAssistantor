@@ -1,0 +1,23 @@
+syntax = "proto3";
+package goods;
+// protoc-gen-go 版本大于1.4.0, proto文件需要加上go_package,否则无法生成
+option go_package = "./goods";
+
+//定义请求体
+message GoodsRequest {
+    int64 goods_id = 1;
+}
+//定义响应体
+message GoodsResponse {
+    // 商品id
+    int64 goods_id = 1;
+    // 商品名称
+    string name = 2;
+}
+
+service Goods {
+    //rpc方法
+    rpc getGoods(GoodsRequest) returns(GoodsResponse);
+    //可以继续定义多个方法
+}
+

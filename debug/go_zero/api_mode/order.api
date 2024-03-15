@@ -1,0 +1,29 @@
+syntax = "v2"
+
+info (
+	author: "技术小虫"
+	date:   "2023-04-21"
+	desc:   "订单api说明"
+)
+
+type (
+	OrderInfoReq {
+		OrderId int64 `json:"order_id"`
+	}
+	OrderInfoResp {
+		OrderId   int64  `json:"order_id"` //订单id
+		GoodsName string `json:"goods_name"` //商品名称
+	}
+)
+
+//定义了一个服务叫order-api
+service order-api {
+	//获取接口的名字叫获取用户信息
+	@doc "获取订单信息"
+	//对应的hanlder即controller是orderInfo
+	@handler orderInfo
+	//请求方法是post，路径是/order/order_id，参数是OrderInfoReq，返回值是OrderInfoResp
+	post /order/info (OrderInfoReq) returns (OrderInfoResp)
+//可以继续定义多个api
+}
+

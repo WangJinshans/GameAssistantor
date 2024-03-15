@@ -1,0 +1,56 @@
+
+
+package sync
+
+import (
+   "log"
+   "sync"
+   "testing"
+   "time"
+)
+
+var done = false
+
+func read(name string, c *sync.Cond) {
+   // 如果不加锁, 可能出现数据竞争, 所有的协程都去判断条件, 可能所有的协程都能满足条件
+   c.L.Lock()
+   // 协程被唤醒后, 如果没有重新检查条件变量, 此时有可能仍然处于不满足条件变量的场景下
+   for !done {
+      c.Wait()
+   }
+   log.Println(name, "starts reading")
+   c.L.Unlock()
+}
+
+func write(name string, c *sync.Cond) {
+   log.Println(name, "starts writing")
+   time.Sleep(time.Second)
+   c.L.Lock()
+   done = true
+   c.L.Unlock()
+   log.Println(name, "wakes all")
+   c.Broadcast()
+}
+
+func TestSyncCond(t *testing.T) {
+   cond := sync.NewCond(&sync.Mutex{})
+
+   go read("reader1", cond)
+   go read("reader2", cond)
+   go read("reader3", cond)
+   write("writer", cond)
+
+   time.Sleep(time.Second * 3)
+}
+
+多个协程等待共同的资源使用: sync.cond
+单个协程等待可以使用channel, 或者close channel的方式通知所有的协程退出
+Broadcast()唤醒所有等待协程, 如果没有线程在等待，则该方法会立即返回
+Signal()随机唤醒1个协程, 没有线程在等待, 则该方法会立即返回
+
+
+sync.cond中存在一个通知队列, 保存了所有处于等待状态的协程
+如果在调用Wait方法前未加锁, 此时会直接panic, 主要原因是可能出现数据竞争, 所有的协程都去判断条件, 可能所有的协程都能满足条件
+
+参考:
+https://juejin.cn/post/7000570207185944589

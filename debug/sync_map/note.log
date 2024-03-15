@@ -1,0 +1,12 @@
+
+
+sync.map 采用两个原生map(read, dirty)的方式进行读写分离, dirty负责写, read负责读
+读取数据时, 先从read里面读取, 没有则在去dirty map里面进行读取, 统计read map在读取的时候被穿透的次数, 达到一定次数后将dirty里面的数据更新到read中
+读取数据是从read里面读取, 并不需要加锁, 而读或写dirty则需要加锁, 原则上来说适合大量读取的场景, 频繁写反而影响性能
+当向dirty写入一个新的key时, dirty会复制read中未被删除的元素
+
+通过冗余的两个数据结构(read、dirty),实现性能的提升。为了提升性能, load、delete、store等操作尽量使用只读的read
+为了提高read的key击中概率, 采用动态调整, 将dirty数据提升为read 
+对于数据的删除, 采用延迟标记删除法, 只有在提升dirty的时候才删除
+
+参考: https://developer.aliyun.com/article/1172753

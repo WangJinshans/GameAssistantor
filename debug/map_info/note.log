@@ -1,7 +1,7 @@
 
 主要是一个hash分为两部分(低位bash和高位hash)低位用于查找bucket,然后tophash快速判断bucket中各个位置是为空
 
-delete 只做标记, 并不真正删除数据
+delete 只做empty标记, 并不真正删除数据, 也不会释放内存, 想要释放内存, 只能将map置为nil, 经过GC后内存将被释放
 
 key和value分开保存, 内存对齐
 
