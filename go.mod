@@ -24,6 +24,7 @@ require (
 	github.com/matryer/try v0.0.0-20161228173917-9ac251b645a2
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/onsi/ginkgo v1.16.5 // indirect
+	github.com/panjf2000/ants/v2 v2.9.0
 	github.com/rs/zerolog v1.28.0
 	github.com/shopspring/decimal v1.2.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
@@ -33,6 +34,7 @@ require (
 	github.com/tidwall/gjson v1.17.1
 	github.com/unrolled/secure v1.12.0
 	github.com/wenlng/go-captcha v1.2.5
+	github.com/xuri/excelize/v2 v2.6.0
 	github.com/zeromicro/go-zero v1.6.3
 	golang.org/x/crypto v0.19.0
 	google.golang.org/grpc v1.62.0

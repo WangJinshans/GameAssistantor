@@ -3,17 +3,19 @@ package main
 import (
 	"fmt"
 	"game_assistantor/api/login"
+	"game_assistantor/auth"
 	"game_assistantor/config"
 	"game_assistantor/middlerware"
 	"game_assistantor/model"
 	"game_assistantor/repository"
+	"game_assistantor/route"
+
 	"github.com/BurntSushi/toml"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
-
 
 var (
 	conf   config.AssistantConfig
@@ -51,10 +53,24 @@ func StartServer() {
 	r.Use(middlerware.Cors())
 	r.Use(gin.Recovery())
 
-	r.GET("/api/public_key", login.GetPublicKey)
-	r.POST("/login", login.Login)
-	r.POST("/register", login.Register)
-	r.POST("/refresh_token", login.RefreshToken)
+	api := r.Group(route.RootTPath)
+	base := api.Group(route.BaseGroupName)
+	{
+		base.GET(route.PublicKeyPath, login.GetPublicKey)
+		base.POST(route.LoginPath, login.Login)
+		base.POST(route.LogoutPath, login.Logout)
+		base.POST(route.RegisterPath, login.Register)
+		base.POST(route.TokenPath, login.RefreshToken)
+		base.POST(route.QrCodePath, login.InitQrCode)
+		base.GET(route.QrCodeStatusPath, login.QueryQrCode)
+		base.PATCH(route.QrCodeStatusPath, login.SetQrCodeStatus)
+		base.POST(route.QrCodeScanPath, login.ScanQrCode)
+	}
+
+	authGroup := api.Group(route.RouterAuthGroupName)
+	{
+		authGroup.POST(route.VerifyPath, auth.VerifyAccess)
+	}
 
 	r.Run(":8088")
 }

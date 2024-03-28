@@ -1,6 +1,7 @@
 package route
 
 const RootTPath = "/"
+const RouterApiGroupName = "api"
 const RouterVersionGroupName = "v1"
 
 // base
@@ -14,6 +15,12 @@ const (
 	QrCodePath       = "/get_qrcode"
 	QrCodeStatusPath = "/qrcode_status"
 	QrCodeScanPath   = "/scan_qrcode"
+)
+
+// auth
+const RouterAuthGroupName = "auth"
+const (
+	VerifyPath = "/verify"
 )
 
 // role
@@ -40,4 +47,11 @@ const DeviceGroupName = "device"
 const (
 	DevicePath  = "/device"
 	DevicesPath = "/list"
+)
+
+const NoteGroupName = "note"
+const (
+	NotePath       = "/"
+	NotesPath      = "/list"
+	NoteCreatePath = "/create"
 )

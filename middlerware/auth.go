@@ -2,6 +2,8 @@ package middlerware
 
 import (
 	"game_assistantor/global"
+	"game_assistantor/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
@@ -45,5 +47,18 @@ func AuthMiddleWare() gin.HandlerFunc {
 			return
 		}
 		c.Next()
+	}
+}
+
+func RomoteAuthMiddleWare() gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		dataMap := make(map[string]interface{})
+		// 地址固定, 方法固定, 参数变动
+		dataMap["token"] = ""
+		dataMap["user_id"] = "" // user id for casbin
+		dataMap["path"] = ""    // 路径 for casbin
+		dataMap["method"] = ""  // 方法 for casbin
+		utils.DoRequest("", "POST", dataMap)
 	}
 }
